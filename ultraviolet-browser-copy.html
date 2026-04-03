@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultraviolet-Style Browser Shell</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #101935;
+      --panel-2: #172449;
+      --accent: #7b8cff;
+      --text: #e8ecff;
+      --muted: #a8b1d4;
+      --danger: #ff6b88;
+      --ok: #4dd3a6;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at 20% 0%, #1b2b63, var(--bg) 45%);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 14px;
+      min-height: 100vh;
+    }
+
+    .brand {
+      background: linear-gradient(140deg, rgba(123, 140, 255, 0.2), rgba(77, 211, 166, 0.08));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title { font-size: 1.05rem; font-weight: 700; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+    .status {
+      font-size: 0.85rem;
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.22);
+    }
+
+    .toolbar {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button {
+      border: 1px solid rgba(255,255,255,0.15);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover { border-color: rgba(255,255,255,0.35); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .go {
+      background: linear-gradient(160deg, var(--accent), #5e74ff);
+      border-color: transparent;
+    }
+
+    .address {
+      flex: 1;
+      min-width: 230px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0c1430;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 0 10px;
+    }
+
+    .address span {
+      color: var(--muted);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    #urlInput {
+      border: none;
+      background: transparent;
+      color: var(--text);
+      width: 100%;
+      outline: none;
+      padding: 10px 0;
+      font-size: 0.95rem;
+    }
+
+    .browser {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: #0a0f22;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 60vh;
+    }
+
+    .tabbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 10px;
+    }
+
+    .tab {
+      background: rgba(123, 140, 255, 0.17);
+      border: 1px solid rgba(123, 140, 255, 0.45);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      max-width: 70%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #viewer {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: white;
+      min-height: 62vh;
+    }
+
+    .helper {
+      color: var(--muted);
+      font-size: 0.83rem;
+      line-height: 1.4;
+      margin-top: 2px;
+    }
+
+    .helper strong { color: var(--ok); }
+    .helper .warn { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="brand">
+      <div>
+        <div class="title">Ultraviolet-Style Browser Shell</div>
+        <div class="subtitle">A visual clone concept with normal iframe navigation only.</div>
+      </div>
+      <div id="statusPill" class="status">Ready</div>
+    </section>
+
+    <section class="toolbar">
+      <button id="backBtn" aria-label="Back">←</button>
+      <button id="forwardBtn" aria-label="Forward">→</button>
+      <button id="reloadBtn" aria-label="Reload">⟳</button>
+
+      <label class="address" for="urlInput">
+        <span>URL</span>
+        <input id="urlInput" type="text" placeholder="example.com or https://example.com" />
+      </label>
+
+      <button id="goBtn" class="go">Go</button>
+      <button id="homeBtn">Home</button>
+    </section>
+
+    <section class="browser">
+      <div class="tabbar">
+        <div id="tabLabel" class="tab">about:blank</div>
+        <div class="helper">
+          <strong>Note:</strong> this is <span class="warn">not</span> a bypass proxy backend.
+        </div>
+      </div>
+      <iframe id="viewer" referrerpolicy="no-referrer" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
+    </section>
+  </main>
+
+  <script>
+    const homeUrl = 'https://example.com';
+    const state = {
+      history: [],
+      index: -1
+    };
+
+    const viewer = document.getElementById('viewer');
+    const urlInput = document.getElementById('urlInput');
+    const tabLabel = document.getElementById('tabLabel');
+    const statusPill = document.getElementById('statusPill');
+    const backBtn = document.getElementById('backBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+
+    function normalizeUrl(raw) {
+      const value = raw.trim();
+      if (!value) return '';
+      if (/^https?:\/\//i.test(value)) return value;
+      return `https://${value}`;
+    }
+
+    function updateControls() {
+      backBtn.disabled = state.index <= 0;
+      forwardBtn.disabled = state.index === -1 || state.index >= state.history.length - 1;
+    }
+
+    function setStatus(message) {
+      statusPill.textContent = message;
+    }
+
+    function openUrl(raw, pushHistory = true) {
+      const url = normalizeUrl(raw);
+      if (!url) {
+        setStatus('Enter a URL');
+        return;
+      }
+
+      setStatus('Loading…');
+      viewer.src = url;
+      urlInput.value = url;
+      tabLabel.textContent = url;
+
+      if (pushHistory) {
+        state.history = state.history.slice(0, state.index + 1);
+        state.history.push(url);
+        state.index = state.history.length - 1;
+      }
+
+      updateControls();
+    }
+
+    viewer.addEventListener('load', () => {
+      setStatus('Loaded');
+    });
+
+    document.getElementById('goBtn').addEventListener('click', () => openUrl(urlInput.value));
+    document.getElementById('reloadBtn').addEventListener('click', () => {
+      if (state.index >= 0) openUrl(state.history[state.index], false);
+    });
+    document.getElementById('homeBtn').addEventListener('click', () => openUrl(homeUrl));
+
+    backBtn.addEventListener('click', () => {
+      if (state.index <= 0) return;
+      state.index -= 1;
+      openUrl(state.history[state.index], false);
+      updateControls();
+    });
+
+    forwardBtn.addEventListener('click', () => {
+      if (state.index >= state.history.length - 1) return;
+      state.index += 1;
+      openUrl(state.history[state.index], false);
+      updateControls();
+    });
+
+    urlInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') openUrl(urlInput.value);
+    });
+
+    openUrl(homeUrl);
+  </script>
+</body>
+</html>
